@@ -16,7 +16,6 @@
 class MMS_Display
 {
 private:
-    U8G2 lcd;
     uint8_t _displayWidth = 0;
     uint8_t _displayHeight = 0;
     uint8_t _tileWidth[5] = {};
@@ -62,6 +61,8 @@ public:
 
     template <typename T>
     void print(T val);
+
+    U8G2 lcd;
 
     uint8_t tilesX[5] = {};
     uint8_t tilesY[5] = {};

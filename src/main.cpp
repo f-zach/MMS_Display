@@ -20,7 +20,7 @@ long encoderValueLast = 1;
 long encoderValue = 0;
 long lastUpdate = 0;
 
-int mode = 0;
+int mode = 0, state = 0;
 bool controllerOn = 0, controllerOnLast = 0;
 
 bool button = true, buttonLast = true, dialogueChoice = false;
@@ -106,8 +106,8 @@ void loop()
 
         case 1:
           Serial.print('*');
-          Serial.print(encoderValue*125);
-          
+          Serial.print(encoderValue * 125);
+
           break;
 
         case 2:
@@ -131,7 +131,6 @@ void loop()
     // incomingString.toCharArray(buffer,50);
   }
 
-  
   if (millis() - lastUpdate >= 100)
   {
     noInterrupts();
@@ -153,35 +152,56 @@ void loop()
 
     lastUpdate = millis();
   }
-  
 
   controllerOnLast = controllerOn;
 }
 
 void tile1()
 {
-  display.setFont(u8g2_font_profont12_mr);
-  display.setCursor(1, 3, 18);
-  display.print(mode);
+  display.clearTile(1);
+  display.setFont(u8g2_font_profont17_mr);
+  display.setCursor(1, 3, 20);
+  display.print(power);
 }
 
 void tile2()
 {
-  display.setFont(u8g2_font_profont12_mr);
-  display.setCursor(2, 3, 18);
-  display.print(millis() - tStart);
+  display.setFont(u8g2_font_profont17_mr);
+  display.setCursor(2, 3, 20);
+  display.print(rpm);
 }
 
 void tile3()
 {
-  display.setFont(u8g2_font_profont12_mr);
-  display.setCursor(3, 3, 18);
-  display.print(power);
+  display.clearTile(3);
+
+  switch (mode)
+  {
+  case 0:
+    display.drawRFrame(3, 21, 11, 20, 8, 3);
+    break;
+
+  case 1:
+    display.drawRFrame(3, 21, 11, 20, 8, 3);
+    break;
+
+  case 2:
+    display.drawRFrame(3, 21, 11, 20, 8, 3);
+    break;
+
+  case 3:
+    display.drawRBox(3, 21, 11, 20, 8, 3);
+    break;
+
+  default:
+    break;
+  }
+  
 }
 
 void tile4()
 {
-  if (!digitalRead(controllerOnPin))
+  if (mode < 3)
   {
     throttleSetting *= 100;
     brakeSetting *= 100;
@@ -189,7 +209,7 @@ void tile4()
     display.drawBar(4, -1, -1, 64, 16, throttleSetting, 100, 2, 0);
     display.drawBar(4, -1, 15, 64, 16, brakeSetting, 100, 2, 0);
 
-    display.setFont(u8g2_font_t0_11_tr);
+    display.setFont(u8g2_font_profont11_mr);
     display.setDrawColor(2);
     display.setFontMode(1);
     display.drawStr(4, 2, 11, "THR:");
@@ -204,7 +224,7 @@ void tile4()
     display.setDrawColor(1);
     display.setFontMode(0);
   }
-  else if (digitalRead(controllerOnPin))
+  else if (mode == 3)
   {
     display.clearTile(4);
     display.setFont(u8g2_font_profont12_mr);
