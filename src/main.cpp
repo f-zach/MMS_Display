@@ -21,21 +21,13 @@ long encoderValue = 0;
 long lastUpdate = 0;
 
 int mode = 0, state = 0;
-bool controllerOn = 0, controllerOnLast = 0;
+bool controllerOn = 0, controllerOnLast = 0, confirm = false;
 
 bool button = true, buttonLast = true, dialogueChoice = false;
 long tStart = 0, loopTime = 0;
 
-String message = "";
-String incomingString;
-
-char buffer[6] = {};
 char incomingChar;
 
-String brakeSettingIn;
-String throttleSettingIn;
-String powerIn;
-String rpmIn;
 float brakeSetting;
 float throttleSetting;
 float power;
@@ -106,16 +98,25 @@ void loop()
 
         case 1:
           Serial.print('*');
-          Serial.print(encoderValue * 125);
+          Serial.print(encoderValue * 250);
 
           break;
 
         case 2:
-          Serial.print('#');
+          if (confirm)
+          {
+            Serial.print('#');
+          }
+          else if (!confirm)
+          {
+            Serial.print('-');
+          }
           break;
 
         case 3:
+
           Serial.print('+');
+
           break;
 
         default:
@@ -131,7 +132,7 @@ void loop()
     // incomingString.toCharArray(buffer,50);
   }
 
-  if (millis() - lastUpdate >= 100)
+  if (millis() - lastUpdate >= 200)
   {
     noInterrupts();
     display.setDrawColor(0);
@@ -153,21 +154,32 @@ void loop()
     lastUpdate = millis();
   }
 
+  encoderValueLast = encoderValue;
   controllerOnLast = controllerOn;
 }
 
 void tile1()
 {
+
   display.clearTile(1);
-  display.setFont(u8g2_font_profont17_mr);
-  display.setCursor(1, 3, 20);
+  display.setFont(u8g2_font_profont12_mr);
+  display.setCursor(1, 3, 11);
+  display.print(F("Power"));
+  display.setFont(u8g2_font_profont17_mn);
+  display.setCursor(1, 3, 26);
   display.print(power);
 }
 
 void tile2()
 {
-  display.setFont(u8g2_font_profont17_mr);
-  display.setCursor(2, 3, 20);
+  display.clearTile(2);
+
+  display.setFont(u8g2_font_profont12_mr);
+  display.setCursor(2, 3, 11);
+  display.print(F("RPM"));
+
+  display.setFont(u8g2_font_profont17_mn);
+  display.setCursor(2, 3, 26);
   display.print(rpm);
 }
 
@@ -196,7 +208,6 @@ void tile3()
   default:
     break;
   }
-  
 }
 
 void tile4()
@@ -212,10 +223,14 @@ void tile4()
     display.setFont(u8g2_font_profont11_mr);
     display.setDrawColor(2);
     display.setFontMode(1);
-    display.drawStr(4, 2, 11, "THR:");
-    display.drawStr(4, 2, 27, "BRK:");
-    display.drawStr(4, 54, 11, "%");
-    display.drawStr(4, 54, 27, "%");
+    display.setCursor(4, 2, 11);
+    display.print(F("THR:"));
+    display.setCursor(4, 2, 27);
+    display.print(F("BRK:"));
+    display.setCursor(4, 54, 11);
+    display.print(F("%"));
+    display.setCursor(4, 54, 27);
+    display.print(F("%"));
     display.setCursor(4, 35, 11);
     display.print(int(throttleSetting));
     display.setCursor(4, 35, 27);
@@ -228,7 +243,8 @@ void tile4()
   {
     display.clearTile(4);
     display.setFont(u8g2_font_profont12_mr);
-    display.drawStr(4, 3, 12, "Set RPM:");
+    display.setCursor(4, 3, 12);
+    display.print(F("Set RPM:"));
     display.setCursor(4, 3, 24);
     display.print(setRPM);
   }
@@ -244,8 +260,11 @@ void dialogueWindow()
     display.setDrawColor(1);
     display.drawFrame(0, 16, 8, 96, 48);
     display.setFont(u8g2_font_profont12_mr);
-    display.setCursor(0, 19, 20);
-    display.print(encoderValue * 125);
+    display.setCursor(0, 20, 20);
+    display.print(F("Set RPM to:"));
+    display.setFont(u8g2_font_profont17_mn);
+    display.setCursor(0, 30, 35);
+    display.print(encoderValue * 250);
     break;
 
   case 2:
@@ -254,8 +273,33 @@ void dialogueWindow()
     display.setDrawColor(1);
     display.drawFrame(0, 16, 8, 96, 48);
     display.setFont(u8g2_font_profont12_mr);
-    display.setCursor(0, 19, 30);
-    display.print(setRPM);
+    display.setCursor(0, 20, 20);
+    display.print(F("Confirm RPM:"));
+    display.setFont(u8g2_font_profont17_mn);
+    display.setCursor(0, 30, 35);
+    display.print(setRPM);   
+
+    if (encoderValue < 0)
+    {
+      confirm = true;
+      encoder.write(0);
+    }
+    else if (encoderValue > 0)
+    {
+      confirm = false;
+      encoder.write(0);
+    }
+
+    display.setFont(u8g2_font_m2icon_9_tf);
+    display.setDrawColor(confirm);
+    display.drawBox(0,47,44,12,9);
+    display.setDrawColor(!confirm);
+    display.lcd.drawGlyph(48, 52, 68);
+    display.setDrawColor(!confirm);
+    display.drawBox(0,69,44,12,9);
+    display.setDrawColor(confirm);
+    display.lcd.drawGlyph(72, 52, 67);
+    display.setDrawColor(1);
     break;
 
   default:
