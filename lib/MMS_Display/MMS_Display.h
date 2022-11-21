@@ -45,6 +45,7 @@ public:
     void drawRFrame(uint8_t targetTile, uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t r);
     void drawDisc(uint8_t targetTile, uint8_t x, uint8_t y, uint8_t r);
     void drawCircle(uint8_t targetTile, uint8_t x, uint8_t y, uint8_t r);
+    void drawTriangle(uint8_t targetTile, uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
     void drawPixel(uint8_t targetTile, uint8_t x, uint8_t y);
     void drawButtonUTF8(uint8_t targetTile, uint8_t x, uint8_t y, uint8_t flags, uint8_t width, uint8_t padding_h, uint8_t padding_v, const char* text);
     void setCursor(uint8_t targetTile, uint8_t x, uint8_t y);

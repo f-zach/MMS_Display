@@ -17,14 +17,14 @@ int controllerOnPin = 13;
 
 Encoder encoder(3, 2);
 long encoderValueLast = 1;
-long encoderValue = 0;
+long encoderValue = 0, brakeCounter = 0;
 long lastUpdate = 0;
 
 int mode = 0, state = 0;
-bool controllerOn = 0, controllerOnLast = 0, confirm = false;
+bool controllerOn = 0, controllerOnLast = 0, confirm = false, blinkToggle = true;
 
 bool button = true, buttonLast = true, dialogueChoice = false;
-long tStart = 0, loopTime = 0;
+long tStart = 0, loopTime = 0, blinkTime = 0;
 
 char incomingChar;
 
@@ -33,6 +33,9 @@ float throttleSetting;
 float power;
 unsigned long rpm;
 unsigned long setRPM;
+int potValue;
+int setPotValue;
+int windowMessage;
 
 void setup()
 {
@@ -84,6 +87,18 @@ void loop()
       case 'm':
         mode = Serial.readStringUntil(';').toFloat();
         break;
+      case 'v':
+        potValue = Serial.readStringUntil(';').toInt();
+        break;
+      case 'n':
+        windowMessage = Serial.readStringUntil(';').toInt();
+        break;
+      case 'a':
+        setPotValue = Serial.readStringUntil(';').toInt();
+        break;
+      case 'o':
+        brakeCounter = Serial.readStringUntil(';').toInt();
+        break;
 
       default:
         break;
@@ -132,7 +147,7 @@ void loop()
     // incomingString.toCharArray(buffer,50);
   }
 
-  if (millis() - lastUpdate >= 200)
+  if (millis() - lastUpdate >= 100)
   {
     noInterrupts();
     display.setDrawColor(0);
@@ -156,6 +171,12 @@ void loop()
 
   encoderValueLast = encoderValue;
   controllerOnLast = controllerOn;
+
+  if (millis() - blinkTime >= 500)
+  {
+    blinkTime = millis();
+    blinkToggle = !blinkToggle;
+  }
 }
 
 void tile1()
@@ -166,8 +187,18 @@ void tile1()
   display.setCursor(1, 3, 11);
   display.print(F("Power"));
   display.setFont(u8g2_font_profont17_mn);
-  display.setCursor(1, 3, 26);
+  if (power >= 10.0)
+  {
+    display.setCursor(1, 3, 26);
+  }
+  else if (power < 10)
+  {
+    display.setCursor(1, 12, 26);
+  }
   display.print(power);
+  display.setFont(u8g2_font_profont12_mr);
+  display.setCursor(1, 3 + 45 + 1, 26);
+  display.print(F("kW"));
 }
 
 void tile2()
@@ -190,19 +221,134 @@ void tile3()
   switch (mode)
   {
   case 0:
-    display.drawRFrame(3, 21, 11, 20, 8, 3);
+    display.setFont(u8g2_font_profont17_mr);
+    display.setCursor(3, 5, 21);
+    display.print(F("MANUAL"));
     break;
 
   case 1:
-    display.drawRFrame(3, 21, 11, 20, 8, 3);
+    display.setFont(u8g2_font_profont17_mr);
+    display.setCursor(3, 18, 21);
+    display.print(F("SET"));
     break;
 
   case 2:
-    display.drawRFrame(3, 21, 11, 20, 8, 3);
+    display.setFont(u8g2_font_profont17_mr);
+    display.setCursor(3, 18, 21);
+    display.print(F("SET"));
     break;
 
   case 3:
-    display.drawRBox(3, 21, 11, 20, 8, 3);
+    display.setFont(u8g2_font_profont17_mr);
+    display.setCursor(3, 14, 21);
+    display.print(F("AUTO"));
+    break;
+
+  case 4:
+    display.setFont(u8g2_font_profont17_mr);
+
+    if (blinkToggle)
+    {
+      switch (windowMessage)
+      {
+      case 0:
+        display.setCursor(3, 18, 13);
+        display.print(F("THR"));
+        display.setCursor(3, 22, 28);
+        display.print(F("UP"));
+        break;
+
+      case 1:
+        display.setCursor(3, 18, 13);
+        display.print(F("THR"));
+        display.setCursor(3, 13, 28);
+        display.print(F("DOWN"));
+        break;
+
+      case 2:
+        display.setCursor(3, 18, 13);
+        display.print(F("BRK"));
+        display.setCursor(3, 22, 28);
+        display.print(F("UP"));
+        break;
+
+      case 3:
+        display.setCursor(3, 18, 13);
+        display.print(F("BRK"));
+        display.setCursor(3, 13, 28);
+        display.print(F("DOWN"));
+        break;
+
+      default:
+        break;
+      }
+    }
+    else if (!blinkToggle)
+    {
+      display.clearTile(3);
+    }
+    break;
+
+  case 5:
+    if(blinkToggle)
+    {
+    display.setDrawColor(0);
+    display.drawBox(3, 0, 0, 62, 30);
+    display.setDrawColor(1);
+    display.setFont(u8g2_font_profont17_mr);
+    display.setCursor(3, 8, 21);
+    display.print(F("WAIT!"));
+    }
+    else if(!blinkToggle)
+    {
+      display.clearTile(3);
+    }
+    break;
+
+  case 6:
+    display.setFont(u8g2_font_profont17_mr);
+
+    switch (windowMessage)
+    {
+    case 0:
+      display.setCursor(3, 2, 13);
+      display.print(F("MAX"));
+      display.setCursor(3, 35, 13);
+      display.print(F("THR"));
+      display.setCursor(3, 18, 28);
+      display.print(F("SET"));
+      break;
+
+    case 1:
+      display.setCursor(3, 2, 13);
+      display.print(F("MIN"));
+      display.setCursor(3, 35, 13);
+      display.print(F("THR"));
+      display.setCursor(3, 22, 28);
+      display.print(F("SET"));
+      break;
+
+    case 2:
+      display.setCursor(3, 2, 13);
+      display.print(F("MAX"));
+      display.setCursor(3, 35, 13);
+      display.print(F("BRK"));
+      display.setCursor(3, 22, 28);
+      display.print(F("SET"));
+      break;
+
+    case 3:
+      display.setCursor(3, 2, 13);
+      display.print(F("MIN"));
+      display.setCursor(3, 35, 13);
+      display.print(F("BRK"));
+      display.setCursor(3, 22, 28);
+      display.print(F("SET"));
+      break;
+
+    default:
+      break;
+    }
     break;
 
   default:
@@ -212,8 +358,26 @@ void tile3()
 
 void tile4()
 {
-  if (mode < 3)
+  switch (mode)
   {
+  case 3:
+    display.clearTile(4);
+    display.setFont(u8g2_font_profont12_mr);
+    display.setCursor(4, 3, 12);
+    display.print(F("Set RPM:"));
+    display.setCursor(4, 3, 24);
+    display.print(setRPM);
+    break;
+
+    // case 4:
+    //   display.clearTile(4);
+    //   if (blinkToggle)
+    //   {
+    //     display.lcd.drawGlyph(32+16+8,64+24, 0x23f6)
+    //   }
+    //   break;
+
+  default:
     throttleSetting *= 100;
     brakeSetting *= 100;
 
@@ -226,27 +390,50 @@ void tile4()
     display.setCursor(4, 2, 11);
     display.print(F("THR:"));
     display.setCursor(4, 2, 27);
-    display.print(F("BRK:"));
+    //display.print(F("B:"));
     display.setCursor(4, 54, 11);
     display.print(F("%"));
-    display.setCursor(4, 54, 27);
-    display.print(F("%"));
-    display.setCursor(4, 35, 11);
-    display.print(int(throttleSetting));
-    display.setCursor(4, 35, 27);
-    display.print(int(brakeSetting));
+    // display.setCursor(4, 54, 27);
+    // display.print(F("%"));
+    display.setCursor(4, 26, 11);
+    if(throttleSetting >= 100)
+    {
+      display.print(100);
+    }
+    else
+    {
+      display.lcd.print(throttleSetting,1);
+    }
+    
+    if(brakeCounter < 10)
+    {
+      display.setCursor(4, 55, 27);
+    }
+    else if(brakeCounter < 100)
+    {
+      display.setCursor(4, 55-6, 27);
+    }
+    else if(brakeCounter < 1000)
+    {
+      display.setCursor(4, 55-2*6, 27);
+    }
+    else if(brakeCounter >= 1000)
+    {
+      display.setCursor(4, 55-3*6, 27);
+    }
+    display.lcd.print(brakeCounter);
+
+    display.setCursor(4,2,27);
+    display.lcd.print(brakeSetting,1);
+    display.setCursor(4,31,27);
+    display.print(F("/"));
+
+
+    
 
     display.setDrawColor(1);
     display.setFontMode(0);
-  }
-  else if (mode == 3)
-  {
-    display.clearTile(4);
-    display.setFont(u8g2_font_profont12_mr);
-    display.setCursor(4, 3, 12);
-    display.print(F("Set RPM:"));
-    display.setCursor(4, 3, 24);
-    display.print(setRPM);
+    break;
   }
 }
 
@@ -264,6 +451,13 @@ void dialogueWindow()
     display.print(F("Set RPM to:"));
     display.setFont(u8g2_font_profont17_mn);
     display.setCursor(0, 30, 35);
+    
+    if (encoderValue < 0)
+    {
+      encoderValue = 0;
+      encoder.write(0);
+    }
+
     display.print(encoderValue * 250);
     break;
 
@@ -277,7 +471,7 @@ void dialogueWindow()
     display.print(F("Confirm RPM:"));
     display.setFont(u8g2_font_profont17_mn);
     display.setCursor(0, 30, 35);
-    display.print(setRPM);   
+    display.print(setRPM);
 
     if (encoderValue < 0)
     {
@@ -292,11 +486,11 @@ void dialogueWindow()
 
     display.setFont(u8g2_font_m2icon_9_tf);
     display.setDrawColor(confirm);
-    display.drawBox(0,47,44,12,9);
+    display.drawBox(0, 47, 44, 12, 9);
     display.setDrawColor(!confirm);
     display.lcd.drawGlyph(48, 52, 68);
     display.setDrawColor(!confirm);
-    display.drawBox(0,69,44,12,9);
+    display.drawBox(0, 69, 44, 12, 9);
     display.setDrawColor(confirm);
     display.lcd.drawGlyph(72, 52, 67);
     display.setDrawColor(1);

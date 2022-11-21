@@ -286,6 +286,11 @@ void MMS_Display::drawCircle(uint8_t targetTile, uint8_t x, uint8_t y, uint8_t r
     lcd.drawCircle(tilesX[targetTile] + x, tilesY[targetTile] + y, r);
 }
 
+void MMS_Display::drawTriangle(uint8_t targetTile, uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2)
+{
+    lcd.drawTriangle(tilesX[targetTile] + x0, tilesY[targetTile] + y0, tilesX[targetTile] + x1, tilesY[targetTile] + y1, tilesX[targetTile] + x2, tilesY[targetTile] + y2);
+}
+
 void MMS_Display::drawPixel(uint8_t targetTile, uint8_t x, uint8_t y)
 {
     lcd.drawPixel(tilesX[targetTile] + x, tilesY[targetTile] + y);
